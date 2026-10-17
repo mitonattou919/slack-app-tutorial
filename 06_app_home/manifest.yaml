@@ -1,0 +1,36 @@
+display_information:
+  name: Practice Bot
+features:
+  app_home:
+    home_tab_enabled: true
+    messages_tab_enabled: true
+    messages_tab_read_only_enabled: false
+  bot_user:
+    display_name: practice-bot
+    always_online: true
+  slash_commands:
+    - command: /practice-echo
+      description: 入力した文字をそのまま返します
+      usage_hint: "[返したい文字]"
+      should_escape: false
+    - command: /practice-feedback
+      description: フィードバック用のフォームを開きます
+      should_escape: false
+oauth_config:
+  scopes:
+    bot:
+      - app_mentions:read
+      - channels:history
+      - chat:write
+      - commands
+      - im:history
+settings:
+  event_subscriptions:
+    bot_events:
+      - app_home_opened
+      - app_mention
+      - message.channels
+      - message.im
+  interactivity:
+    is_enabled: true
+  socket_mode_enabled: true

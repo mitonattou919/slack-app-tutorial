@@ -1,0 +1,18 @@
+[project]
+name = "slack-app-tutorial"
+version = "0.1.0"
+description = "Slack App ハンズオン用の Practice Bot（章ごとのコードとマニフェスト）"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "slack-bolt>=1.30.0",
+]
+
+# 共通ヘルパー（slack_helpers）を、どの章のディレクトリからも import できるようにする
+[build-system]
+requires = ["uv_build>=0.9.26,<0.14"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "slack_helpers"
+module-root = ""

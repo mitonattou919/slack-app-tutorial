@@ -1,0 +1,13 @@
+# トークン
+.env
+
+# Python
+__pycache__/
+*.py[oc]
+build/
+dist/
+*.egg-info/
+.venv/
+
+# macOS
+.DS_Store
