@@ -67,6 +67,8 @@ Practice Bot は、**入館証（トークン）を渡された新人アシス�
 
 ## Chapter 1: 準備と 5 分ハロー
 
+> ハンズオンに参加する方は、`slack-app-prework.md`（事前準備）を済ませていれば、1〜2 は飛ばして「3. マニフェストからアプリを作る」から始めてください。
+
 ### 1. 必要なもの
 
 | もの | 確認方法・入手先 |
@@ -882,4 +884,5 @@ rm -rf slack-app-tutorial   # リポジトリごと削除する。残したい�
 
 - `slack-app-overview.md` — Slack App の全体像
 - `slack-app-best-practices.md` — 本番運用（コンテナ / 関数でのホスティング）の設計原則と失敗パターン
+- `slack-app-prework.md` — ハンズオン参加者の事前準備
 - `claude-tag-tutorial.md` — Claude を Slack で使う（Claude Tag）

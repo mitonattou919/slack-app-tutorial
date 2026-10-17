@@ -6,6 +6,7 @@ uv と Bolt for Python で練習用の Slack ボット（Practice Bot）を育�
 
 | 教材 | 内容 |
 |---|---|
+| [docs/slack-app-prework.md](docs/slack-app-prework.md) | **ハンズオン参加者の事前準備**（当日までに済ませる） |
 | [docs/slack-app-overview.md](docs/slack-app-overview.md) | Slack App の全体像（コードを書く前の地図） |
 | [docs/slack-app-tutorial.md](docs/slack-app-tutorial.md) | ハンズオン本編。このリポジトリのコードを使う |
 | [docs/slack-app-best-practices.md](docs/slack-app-best-practices.md) | 本番運用の設計原則と失敗パターン |
@@ -30,6 +31,8 @@ uv と Bolt for Python で練習用の Slack ボット（Practice Bot）を育�
 各章のディレクトリは**それまでの章を全部含んだ状態**です。途中の章から始めても、そのディレクトリの `main.py` と `manifest.yaml` を使えば動きます。
 
 ## セットアップ
+
+ハンズオン参加者は、[事前準備](docs/slack-app-prework.md)の手順に沿って進めてください。
 
 ```bash
 git clone https://github.com/mitonattou919/slack-app-tutorial.git
