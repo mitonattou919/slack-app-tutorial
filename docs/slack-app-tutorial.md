@@ -67,7 +67,7 @@ Practice Bot は、**入館証（トークン）を渡された新人アシス�
 
 ## Chapter 1: 準備と 5 分ハロー
 
-> ハンズオンに参加する方は、`slack-app-prework.md`（事前準備）を済ませていれば、1〜2 は飛ばして「3. マニフェストからアプリを作る」から始めてください。
+> `slack-app-prework.md`（準備）を済ませた方は、1〜2 は飛ばして「3. マニフェストからアプリを作る」から始めてください。準備の手順には、つまずいたときの対処も載っています。
 
 ### 1. 必要なもの
 
@@ -85,7 +85,7 @@ git --version
 
 ⚠ **会社のワークスペースでは練習しないでください。** アプリの追加に管理者の承認が必要なことが多く、練習用のメッセージが同僚に見えてしまいます。練習用ワークスペースは次のどちらかで用意します。
 
-- **Developer Program のサンドボックス（おすすめ）**: https://api.slack.com/developer-program で「Join the Program」→ 届いたメールで有効化 → ダッシュボードの **Sandboxes** で「Provision Sandbox」。無料です。基本サンドボックスは 1 か月で期限切れ（アーカイブ）になります
+- **Developer Program のサンドボックス（おすすめ）**: 無料で作れる練習用ワークスペースです。作り方と、期限切れ（基本サンドボックスは 1 か月でアーカイブ）になったときの作り直し方は、`slack-app-prework.md` の「3. Slack Developer Program に参加し、サンドボックスを作る」を参照してください
 - **自分で作る無料ワークスペース**: Slack の通常の手順で新規作成します
 
 ### 2. リポジトリを取得する
@@ -884,5 +884,5 @@ rm -rf slack-app-tutorial   # リポジトリごと削除する。残したい�
 
 - `slack-app-overview.md` — Slack App の全体像
 - `slack-app-best-practices.md` — 本番運用（コンテナ / 関数でのホスティング）の設計原則と失敗パターン
-- `slack-app-prework.md` — ハンズオン参加者の事前準備
+- `slack-app-prework.md` — 始める前の準備（つまずいたときの対処付き）
 - `claude-tag-tutorial.md` — Claude を Slack で使う（Claude Tag）
