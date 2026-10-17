@@ -9,6 +9,7 @@ uv と Bolt for Python で練習用の Slack ボット（Practice Bot）を育�
 | [docs/slack-app-prework.md](docs/slack-app-prework.md) | **始める前の準備**（ツール、サンドボックス、リポジトリの取得。つまずいたときの対処付き） |
 | [docs/slack-app-overview.md](docs/slack-app-overview.md) | Slack App の全体像（コードを書く前の地図） |
 | [docs/slack-app-tutorial.md](docs/slack-app-tutorial.md) | ハンズオン本編。このリポジトリのコードを使う |
+| [docs/slack-app-tutorial-answers.md](docs/slack-app-tutorial-answers.md) | 練習課題のヒントと解答例（動くコードは `answers/`） |
 | [docs/slack-app-best-practices.md](docs/slack-app-best-practices.md) | 本番運用の設計原則と失敗パターン |
 
 ## ディレクトリ構成
@@ -22,6 +23,7 @@ uv と Bolt for Python で練習用の Slack ボット（Practice Bot）を育�
 ├── 05_modals/          Chapter 5: モーダル
 ├── 06_app_home/        Chapter 6: App Home
 ├── 07_streaming/       Chapter 7: ストリーミング返信（全章の完成形）
+├── answers/            練習課題の解答例（章ごと。例: answers/02_messages/task1.py）
 ├── slack_helpers/      各章で共通して使うヘルパー（スレッド返信など）
 ├── docs/               教材
 ├── .env.example        トークンのひな形

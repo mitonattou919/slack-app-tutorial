@@ -102,7 +102,7 @@ uv run python -c "import slack_bolt, slack_helpers; print('OK', slack_bolt.versi
 | 症状 | 対処 |
 |---|---|
 | `git clone` や `uv sync` が通信エラー・タイムアウトになる | 下の「プロキシがある環境」を参照 |
-| `SSL` や `certificate` を含むエラーが出る | 社内ネットワークが通信を検査している可能性があります。`uv sync --native-tls` で、OS に登録された証明書を使って実行し直します |
+| `SSL` や `certificate` を含むエラーが出る | 社内ネットワークが通信を検査している可能性があります。`uv sync --system-certs` で、OS に登録された証明書を使って実行し直します（古い uv で `unexpected argument` と出る場合は `uv sync --native-tls`） |
 | `git clone` がどうしても通らない | GitHub のリポジトリのページ（https://github.com/mitonattou919/slack-app-tutorial）で **Code** → **Download ZIP** を選び、展開したディレクトリで `uv sync` 以降を実行します（この場合、チュートリアルの `git restore` は使えません） |
 | `ModuleNotFoundError` が出る | `slack-app-tutorial` ディレクトリの中で実行しているか、`uv sync` が最後まで成功したかを確認します |
 | 何をしても直らない | `.venv` ディレクトリを削除してから、もう一度 `uv sync` を実行します |
@@ -193,7 +193,7 @@ $env:HTTPS_PROXY = "http://proxy.example.com:8080"
 - **Developer Program**: https://api.slack.com/developer-program
 - **Developer Program サンドボックス**: https://docs.slack.dev/tools/developer-sandboxes
 - **uv のインストール**: https://docs.astral.sh/uv/getting-started/installation/
-- **uv のネットワーク設定（プロキシ、証明書）**: https://docs.astral.sh/uv/concepts/authentication/certificates/
+- **uv の TLS 証明書の設定**: https://docs.astral.sh/uv/concepts/authentication/certificates/
 - **Git**: https://git-scm.com/
 
 ### 関連教材

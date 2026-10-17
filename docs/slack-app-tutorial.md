@@ -111,6 +111,7 @@ slack-app-tutorial/
 ├── 05_modals/
 ├── 06_app_home/
 ├── 07_streaming/          ← 全章の完成形
+├── answers/               ← 練習課題の解答例（章ごと）
 ├── slack_helpers/         ← 各章で共通して使うヘルパー（Chapter 2 で扱う）
 ├── docs/                  ← この教材
 ├── .env.example           ← トークンのひな形
@@ -266,6 +267,8 @@ Slack から届いた中身をすべて見たいときは、`.env` に `LOG_LEVE
 
 ### 練習課題
 
+> ヒントと解答例: `slack-app-tutorial-answers.md` の Chapter 1（動くコードは `answers/01_preparing/`）
+
 練習課題では、その章のディレクトリの `main.py` を直接書き換えます。書き換えは次の章のディレクトリには引き継がれません。元に戻したいときは `git restore 01_preparing/main.py` のように実行します。
 
 1. **基本**: 挨拶の文言を変え、プログラムを再起動して反映されることを確認する
@@ -381,6 +384,8 @@ Chapter 2 からは、Chapter 1 のメンションへの返事も `reply_in_thre
 
 ### 練習課題
 
+> ヒントと解答例: `slack-app-tutorial-answers.md` の Chapter 2（動くコードは `answers/02_messages/`）
+
 1. **基本**: 「bye」を含むメッセージに「またね！」とスレッドで返すリスナーを、`reply_in_thread` を使って追加する
 2. **応用**: hello に反応したとき、`reply_in_thread` ではなく `client.chat_postMessage` を使って、発言した人に DM で返事を送る（リスナーの引数に `client` を追加し、`channel=message["user"]` を指定）
 3. **複合**: `hello` を、チャンネル直下とスレッドの中の両方で発言し、返事がどこに付くかを比べる。続いて `reply_in_thread(say, message, "...", reply_broadcast=True)` と書き換え、スレッドへの返事がチャンネルにも表示されることを確かめる（`**kwargs` で `say` に引数がそのまま渡ることを体験する）
@@ -469,6 +474,8 @@ respond(response_type="in_channel", text=f"あなたの入力: {command['text']}
 
 ### 練習課題
 
+> ヒントと解答例: `slack-app-tutorial-answers.md` の Chapter 3（動くコードは `answers/03_slash_commands/`）
+
 1. **基本**: `/practice-echo` の返事を `in_channel` に変え、全員に見えることを確認する
 2. **応用**: 入力が空のとき（`command['text']` が空文字）に「何か入力してください」と返す
 3. **複合**: 入力の先頭が `public ` のときだけ `in_channel`、それ以外は ephemeral で返す（例: `/practice-echo public みなさんこんにちは`）
@@ -546,6 +553,8 @@ uv run --env-file .env 04_block_kit/main.py
 > JSON を手書きする前に、ブラウザで部品を組んでプレビューできる **Block Kit Builder** を使うと効率的です。
 
 ### 練習課題
+
+> ヒントと解答例: `slack-app-tutorial-answers.md` の Chapter 4（動くコードは `answers/04_block_kit/`）
 
 1. **基本**: 承認メッセージの先頭に `header` ブロック（`{"type": "header", "text": {"type": "plain_text", "text": "デプロイ承認"}}`）を追加する
 2. **応用**: 「却下」ボタン（`action_id` は `reject_button`、`style` は `danger`）を追加し、押されたら「却下しました」に書き換える。ボタンを 2 つ並べるには、`section` の代わりに `actions` ブロック（`{"type": "actions", "elements": [ボタン1, ボタン2]}`）を使う
@@ -651,6 +660,8 @@ Chapter 5 のもので起動し直し（`uv run --env-file .env 05_modals/main.p
 
 ### 練習課題
 
+> ヒントと解答例: `slack-app-tutorial-answers.md` の Chapter 5（動くコードは `answers/05_modals/`）
+
 1. **基本**: モーダルのタイトルと送信ボタンの文言を変える
 2. **応用**: 「お名前」の 1 行入力欄（`multiline` なし、`block_id` は `name_block`、`action_id` は `name_input`）を追加し、DM のお礼に名前を含める
 3. **複合**: Chapter 4 の承認ボタンを押したら、承認理由を入力するモーダルを開くようにする（アクションの `body["trigger_id"]` も使える）
@@ -733,6 +744,8 @@ Chapter 6 のもので起動し直し（`uv run --env-file .env 06_app_home/main
 
 ### 練習課題
 
+> ヒントと解答例: `slack-app-tutorial-answers.md` の Chapter 6（動くコードは `answers/06_app_home/`）
+
 1. **基本**: ホームに `divider` ブロック（`{"type": "divider"}`）と、使い方の説明文をもう 1 つ追加する
 2. **応用**: ホームに Chapter 4 と同じ形式のボタン（`action_id` は `home_refresh`）を置き、押されたら `views_publish` で現在時刻を表示し直す（アクションでは `body["user"]["id"]` でユーザーを取得）
 3. **複合**: `/practice-feedback` で送られた件数を Python の変数で数え、ホームに「これまでのフィードバック: N 件」と表示する（関数の外の変数を書き換えるには、関数内で `global` 宣言が必要。プログラムを再起動すると 0 に戻ることも確認する）
@@ -787,6 +800,8 @@ Chapter 7 のもので起動し直し（`uv run --env-file .env 07_streaming/mai
 Chapter 3〜5 では「3 秒以内に `ack()`」が必須でした。イベントのリスナーでは、`ack` を呼ぶ必要がありません。**イベントの受領は Bolt が自動で返す**ため、この例のように 2.5 秒かかる処理でも、Slack に再送されることはありません。本物の LLM を呼ぶときも、メッセージイベントで受けて `say_stream` で返す形が基本になります。
 
 ### 練習課題
+
+> ヒントと解答例: `slack-app-tutorial-answers.md` の Chapter 7（動くコードは `answers/07_streaming/`）
 
 1. **基本**: 流れる文章と待ち時間を変えて、表示の変化を観察する
 2. **応用**: 届いたメッセージの本文（リスナーの引数に `message` を追加し、`message["text"]`）を 1 文字ずつ流して返す
@@ -885,4 +900,5 @@ rm -rf slack-app-tutorial   # リポジトリごと削除する。残したい�
 - `slack-app-overview.md` — Slack App の全体像
 - `slack-app-best-practices.md` — 本番運用（コンテナ / 関数でのホスティング）の設計原則と失敗パターン
 - `slack-app-prework.md` — 始める前の準備（つまずいたときの対処付き）
+- `slack-app-tutorial-answers.md` — 練習課題のヒントと解答例
 - `claude-tag-tutorial.md` — Claude を Slack で使う（Claude Tag）
