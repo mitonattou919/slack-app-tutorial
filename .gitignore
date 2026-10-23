@@ -11,3 +11,6 @@ dist/
 
 # macOS
 .DS_Store
+
+# sbx kit はリポジトリで管理する（グローバル gitignore の .sbx を打ち消す）
+!.sbx/
