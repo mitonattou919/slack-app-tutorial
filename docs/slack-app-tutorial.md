@@ -231,7 +231,7 @@ if __name__ == "__main__":
 uv run --env-file .env 01_preparing/main.py
 ```
 
-`Bolt app is running!` という起動ログが出たら接続成功です。以降の章も、**ルートで `uv run --env-file .env <章のディレクトリ>/main.py`** の形で起動します。
+`Bolt app is running!` という起動ログが出たら起動は成功です。ただし、このログは Slack との接続が成功した保証ではありません（WebSocket の接続が拒否されていても出ます）。接続できているかは、次の節で実際にメンションして、**返事が来ること**で確かめます。以降の章も、**ルートで `uv run --env-file .env <章のディレクトリ>/main.py`** の形で起動します。
 
 ### 6. 5 分で成功体験
 
@@ -264,6 +264,8 @@ Slack から届いた中身をすべて見たいときは、`.env` に `LOG_LEVE
 > - `KeyError: 'SLACK_BOT_TOKEN'` → `.env` が読めていません。リポジトリのルート（`.env` がある場所）で `--env-file .env` を付けて起動しているか確認します
 > - `invalid_auth` → トークンのコピーミスです。前後の空白や、`xoxb-` と `xapp-` の取り違えを確認します
 > - 起動はするが反応がない → ターミナルに `app_mention from ...` のログが出ているかを見ます。出ていなければイベントが届いていません（ボットをチャンネルに招待したか、プログラムが起動したままか確認します）。出ているのに返事がなければ、その後に表示される `ERROR` のログを確認します
+> - `Bolt app is running!` は出るのに、ずっと反応がない、または同じ警告を繰り返す → 通信が拒否されている可能性があります。サンドボックス（sbx）で動かしている場合は、`slack-app-prework.md` の「sbx で動かす場合」を確認します
+> - `WARNING Unhandled request ... 404` が出る → 正常です。ボットが購読しているイベントのうち、担当するリスナーがないものが届いたときに出ます。エラーではありません
 
 ### 練習課題
 
@@ -272,7 +274,7 @@ Slack から届いた中身をすべて見たいときは、`.env` に `LOG_LEVE
 練習課題では、その章のディレクトリの `main.py` を直接書き換えます。書き換えは次の章のディレクトリには引き継がれません。元に戻したいときは `git restore 01_preparing/main.py` のように実行します。
 
 1. **基本**: 挨拶の文言を変え、プログラムを再起動して反映されることを確認する
-2. **応用**: プログラムを止めた状態でメンションし、何も返ってこないことを確かめる。「自前ホストの App は、手元のプログラムが止まると止まる」ことを体験する
+2. **応用**: プログラムを止めた状態でメンションし、何も返ってこないことを確かめる。「自前ホストの App は、手元のプログラムが止まると止まる」ことを体験する（停止中の確認は **1 分以上**待ちます。また、起動し直す前に別のメンションを送らないでください。Slack の再送で、後から返事が届くことがあります）
 3. **複合**: 返事に、メンションされた本文（`event['text']`）を含める。本文の先頭に `<@ボットのID>` が付いていることを観察する
 
 ---
@@ -325,11 +327,16 @@ App 設定画面の **App Manifest** を開き、`02_messages/manifest.yaml` の
 # Chapter 2: 「hello」を含むメッセージに反応する
 @app.message("hello")
 def handle_hello(message, say):
-    logger.info("message from %s in %s: %s", message["user"], message["channel"], message["text"])
+    logger.info("message from %s in %s: %s", message.get("user"), message["channel"], message["text"])
+    # ボットの発言（subtype: bot_message）には user がないので、何もしない
+    if "user" not in message:
+        return
     reply_in_thread(say, message, f"hello を受け取りました、<@{message['user']}> さん")
 ```
 
 `@app.message("hello")` は、「hello」を含むメッセージが届いたときに呼ばれるリスナーです。`reply_in_thread` は、返事を**スレッドに**書くための共通ヘルパーです（次の節で説明します）。
+
+`if "user" not in message: return` は、他のボットの発言を無視するためのガードです。ボットの発言（`subtype: bot_message`）には `user` がなく、そのまま `message["user"]` を読むと `KeyError` になります。
 
 プログラムを Chapter 2 のもので起動し直します（`Ctrl+C` で止めてから）。
 
@@ -345,6 +352,7 @@ uv run --env-file .env 02_messages/main.py
 > - `Hello` や `HELLO` に反応しない → 文字列での指定は大文字と小文字を区別します
 > - `@practice-bot hello` と送ると 2 回返事が来る → メンションのリスナーと hello のリスナーの**両方**が反応しています。メンションも「hello を含むメッセージ」でもあるためで、不具合ではなく、イベントが 2 種類届いているだけです
 > - DM で送れない → マニフェストの `app_home` の 2 行が保存されているか確認し、Slack を再読み込みします
+> - `hello` や `bye` などの発言で `WARNING Unhandled request ... 404` が出る → 正常です。ボットは発言のイベントをすべて受け取りますが、一致するリスナーがないものは「担当なし」として警告されるだけで、エラーではありません
 > - `ModuleNotFoundError: No module named 'slack_helpers'` → リポジトリのルートで `uv sync` を実行してから、`uv run` で起動します
 
 ### 4. スレッドに返す：共通ヘルパー `reply_in_thread`
@@ -471,6 +479,7 @@ respond(response_type="in_channel", text=f"あなたの入力: {command['text']}
 > - コマンドが候補に出てこない → マニフェストの保存と再インストールを確認し、Slack を再読み込みします
 > - コマンドを実行するとエラーが表示される → プログラムが起動していないか、`ack()` が呼ばれていません
 > - スレッドの中で実行できない → 自作のスラッシュコマンドはスレッド内では使えない仕様です
+> - リスナーのログ（`logger.info`）は出ているのに、返事が Slack に表示されない → `respond()` は、`response_url`（`hooks.slack.com`）への通信に失敗しても、例外にもエラーログにもなりません。サンドボックス（sbx）などで `hooks.slack.com` への通信が許可されていないと、この状態になります。`slack-app-prework.md` の「sbx で動かす場合」を確認します
 
 ### 練習課題
 
@@ -498,7 +507,7 @@ Slack のメッセージには、**Block Kit**（見出し・文・ボタンな�
 # Chapter 4: ボタン付きメッセージ
 @app.message("approve")
 def send_approval(message, say):
-    logger.info("approval request from %s in %s", message["user"], message["channel"])
+    logger.info("approval request from %s in %s", message.get("user"), message["channel"])
     reply_in_thread(
         say,
         message,
@@ -758,7 +767,7 @@ Chapter 6 のもので起動し直し（`uv run --env-file .env 06_app_home/main
 
 生成 AI のボットは、回答を一度に出すのではなく、文字が少しずつ流れるように表示されます。Slack はこのための **ストリーミング API** を用意しており、Bolt for Python では `say_stream` で簡単に使えます。この章では LLM の代わりに、決まった文章を少しずつ送ります。
 
-> ⚠ ストリーミングは AI アプリ向けの新しい機能です。無料プランのワークスペースで利用できるかは、公式ドキュメントで確認できませんでした（2026-10-15 時点）。動かない場合は Developer Program のサンドボックスで試すか、この章を飛ばして Chapter 8 へ進んでください。
+> ⚠ ストリーミングは AI アプリ向けの新しい機能です。無料プランのワークスペースで利用できるかは、公式ドキュメントで確認できませんでした（2026-10-15 時点）。Developer Program の基本サンドボックスでは、`say_stream` によるストリーミングが動作することを確認しています（2026-10 時点）。動かない場合は Developer Program のサンドボックスで試すか、この章を飛ばして Chapter 8 へ進んでください。
 
 マニフェストの変更は不要です（必要なスコープ `chat:write` は Chapter 1 から付いています。`07_streaming/manifest.yaml` は Chapter 6 と同じ内容です）。
 
@@ -770,7 +779,7 @@ Chapter 6 のもので起動し直し（`uv run --env-file .env 06_app_home/main
 # Chapter 7: ストリーミング返信
 @app.message("stream")
 def handle_stream(message, say_stream):
-    logger.info("stream request from %s in %s", message["user"], message["channel"])
+    logger.info("stream request from %s in %s", message.get("user"), message["channel"])
     # 既定では 256 文字たまるまで送信されないため、append するたびに送るよう buffer_size を小さくする
     stream = say_stream(buffer_size=1)
     for word in ["Slack App ", "の ", "ストリーミング ", "返信 ", "です。"]:

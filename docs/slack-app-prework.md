@@ -173,6 +173,28 @@ $env:HTTPS_PROXY = "http://proxy.example.com:8080"
 
 サンドボックスのワークスペースで、練習用のチャンネル `#bot-practice` を作っておきます。チュートリアルでは、このチャンネルにボットを招待して動かします。
 
+### サンドボックス（sbx）で動かす場合
+
+自分の PC で直接動かす場合は、この節は不要です。Docker のサンドボックス（`sbx`）の中で動かす場合は、外部への通信がすべて許可制になっています。次のホストを許可しないと、ボットは動きません。ホスト側のターミナルで実行します。
+
+```bash
+sbx policy allow network "slack.com,*.slack.com,wss-*.slack.com,hooks.slack.com"
+```
+
+| ホスト | 用途 |
+|---|---|
+| `slack.com` / `*.slack.com` | Slack の Web API |
+| `wss-*.slack.com` | Socket Mode の WebSocket 接続 |
+| `hooks.slack.com` | `respond()` の返信先（`response_url`）。Chapter 3 以降で使う |
+
+許可が足りないときの症状です。
+
+| 症状 | 原因 |
+|---|---|
+| 起動時に `token is invalid` と出る | `slack.com` が許可されていません（トークンが間違っているわけではありません） |
+| `Bolt app is running!` は出るが、403 で再接続を繰り返す | `wss-*.slack.com` が許可されていません |
+| Chapter 3 以降で、ログは出るのに返事が表示されない | `hooks.slack.com` が許可されていません（`respond()` は失敗しても何も表示しません） |
+
 ---
 
 ## 準備完了のチェックリスト

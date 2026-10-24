@@ -29,7 +29,10 @@ def handle_mention(event, say):
 # Chapter 2: 「hello」を含むメッセージに反応する
 @app.message("hello")
 def handle_hello(message, say):
-    logger.info("message from %s in %s: %s", message["user"], message["channel"], message["text"])
+    logger.info("message from %s in %s: %s", message.get("user"), message["channel"], message["text"])
+    # ボットの発言（subtype: bot_message）には user がないので、何もしない
+    if "user" not in message:
+        return
     reply_in_thread(say, message, f"hello を受け取りました、<@{message['user']}> さん")
 
 
@@ -44,7 +47,7 @@ def handle_echo(ack, respond, command):
 # Chapter 4: ボタン付きメッセージ
 @app.message("approve")
 def send_approval(message, say):
-    logger.info("approval request from %s in %s", message["user"], message["channel"])
+    logger.info("approval request from %s in %s", message.get("user"), message["channel"])
     reply_in_thread(
         say,
         message,
