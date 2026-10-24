@@ -1,0 +1,18 @@
+schemaVersion: "2"
+kind: mixin
+name: slack
+description: Egress allow-list for running the Slack App tutorial (Slack APIs, Socket Mode, response_url, git clone and uv sync)
+
+permissions:
+  network:
+    allow:
+      # Slack Web API (auth.test, chat.postMessage, ...)
+      - slack.com
+      # api.slack.com, hooks.slack.com (respond() / response_url), wss-primary.slack.com (Socket Mode)
+      - "*.slack.com"
+      # git clone, and uv downloading Python from GitHub releases
+      - github.com
+      - "*.githubusercontent.com"
+      # uv sync
+      - pypi.org
+      - files.pythonhosted.org

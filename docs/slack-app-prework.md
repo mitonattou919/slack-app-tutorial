@@ -175,7 +175,9 @@ $env:HTTPS_PROXY = "http://proxy.example.com:8080"
 
 ### サンドボックス（sbx）で動かす場合
 
-自分の PC で直接動かす場合は、この節は不要です。Docker のサンドボックス（`sbx`）の中で動かす場合は、外部への通信がすべて許可制になっています。次のホストを許可しないと、ボットは動きません。ホスト側のターミナルで実行します。
+自分の PC で直接動かす場合は、この節は不要です。Docker のサンドボックス（`sbx`）の中で動かす場合は、外部への通信がすべて許可制になっています。次のホストを許可しないと、ボットは動きません。
+
+このリポジトリの `sbxenv.yaml` から作成したサンドボックスでは、`.sbx/kits/slack/spec.yaml` が必要なホスト（上記に加えて、`git clone` と `uv sync` 用の GitHub と PyPI）を宣言しているので、手動の許可は不要です。`sbxenv.yaml` を使わずにサンドボックスを作った場合は、ホスト側のターミナルで次を実行します。
 
 ```bash
 sbx policy allow network "slack.com,*.slack.com,wss-*.slack.com,hooks.slack.com"
