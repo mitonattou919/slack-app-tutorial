@@ -89,9 +89,9 @@ diff 02_messages/main.py answers/02_messages/task1.py
 <details>
 <summary>解説（コードの変更はありません）</summary>
 
-`Ctrl+C` でプログラムを止めてから、Slack でメンションします。返事は来ません。
+`Ctrl+C` でプログラムを止めてから、Slack でメンションします。停止中は返事が付きません。1 分以上待って、返事が付かないことを確かめます。
 
-Slack はイベントを送ろうとしますが、受け取るプログラムがいないため、何も起きません。Slack App の「中身」は Slack の中ではなく、**あなたの PC で動いているプログラム**です。プログラムが止まればボットも止まります。本番でサーバーを止めない工夫が必要になる理由は、`slack-app-best-practices.md` の Chapter 1 で扱います。
+Slack はイベントを送ろうとしますが、受け取るプログラムがいないため、その場では何も起きません。ただし、Slack は届かなかったイベントを**再送**します（1 分後、5 分後など）。そのため、停止中に送ったメンションが、プログラムを起動し直したあとに届き、遅れて返事が付くことがあります（`LOG_LEVEL=DEBUG` で見ると、`retry_attempt` と `retry_reason: timeout` が付いたリクエストです）。確認するときは、起動し直す前に別のメンションを送らず、停止中の確認を終えてから起動してください。Slack App の「中身」は Slack の中ではなく、**あなたの PC で動いているプログラム**です。プログラムが止まればボットも止まります。本番でサーバーを止めない工夫が必要になる理由は、`slack-app-best-practices.md` の Chapter 1 で扱います。
 
 </details>
 
@@ -138,7 +138,7 @@ Slack はイベントを送ろうとしますが、受け取るプログラム�
 # 練習課題 1: 「bye」を含むメッセージにスレッドで返す
 @app.message("bye")
 def handle_bye(message, say):
-    logger.info("bye from %s in %s", message["user"], message["channel"])
+    logger.info("bye from %s in %s", message.get("user"), message["channel"])
     reply_in_thread(say, message, "またね！")
 ```
 
@@ -164,7 +164,10 @@ def handle_bye(message, say):
 
 ```python
 def handle_hello(message, client):
-    logger.info("message from %s in %s: %s", message["user"], message["channel"], message["text"])
+    logger.info("message from %s in %s: %s", message.get("user"), message["channel"], message["text"])
+    # Bot のメッセージ（subtype: bot_message）には user がないので、何もしない
+    if "user" not in message:
+        return
     # channel にユーザー ID を指定すると、そのユーザーへの DM になる
     client.chat_postMessage(channel=message["user"], text="hello を受け取りました（DM でお返事しています）")
 ```

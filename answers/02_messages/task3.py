@@ -28,7 +28,10 @@ def handle_mention(event, say):
 # Chapter 2: 「hello」を含むメッセージに反応する
 @app.message("hello")
 def handle_hello(message, say):
-    logger.info("message from %s in %s: %s", message["user"], message["channel"], message["text"])
+    logger.info("message from %s in %s: %s", message.get("user"), message["channel"], message["text"])
+    # ボットの発言（subtype: bot_message）には user がないので、何もしない
+    if "user" not in message:
+        return
     # reply_broadcast=True は **kwargs を通って say に渡る。スレッドへの返事がチャンネルにも表示される
     reply_in_thread(say, message, f"hello を受け取りました、<@{message['user']}> さん", reply_broadcast=True)
 

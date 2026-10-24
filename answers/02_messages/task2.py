@@ -28,7 +28,10 @@ def handle_mention(event, say):
 # Chapter 2: 「hello」を含むメッセージに反応する
 @app.message("hello")
 def handle_hello(message, client):
-    logger.info("message from %s in %s: %s", message["user"], message["channel"], message["text"])
+    logger.info("message from %s in %s: %s", message.get("user"), message["channel"], message["text"])
+    # Bot のメッセージ（subtype: bot_message）には user がないので、何もしない
+    if "user" not in message:
+        return
     # channel にユーザー ID を指定すると、そのユーザーへの DM になる
     client.chat_postMessage(channel=message["user"], text="hello を受け取りました（DM でお返事しています）")
 
