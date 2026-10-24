@@ -5,3 +5,4 @@ workspace: .
 
 kits:
   - ./.sbx/kits/gitleaks
+  - ./.sbx/kits/slack
