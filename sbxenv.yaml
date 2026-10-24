@@ -1,0 +1,7 @@
+schemaVersion: "1"
+name: slack-app-tutorial
+agent: claude
+workspace: .
+
+kits:
+  - ./.sbx/kits/gitleaks
