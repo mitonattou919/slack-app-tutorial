@@ -22,7 +22,8 @@ uv と Bolt for Python で練習用の Slack ボット（Practice Bot）を育�
 ├── 04_block_kit/       Chapter 4: Block Kit とボタン
 ├── 05_modals/          Chapter 5: モーダル
 ├── 06_app_home/        Chapter 6: App Home
-├── 07_streaming/       Chapter 7: ストリーミング返信（全章の完成形）
+├── 07_streaming/       Chapter 7: ストリーミング返信（Chapter 1〜7 の完成形）
+├── 08_agents/          Chapter 8（応用編）: エージェント画面。別 App で動かす
 ├── answers/            練習課題の解答例（章ごと。例: answers/02_messages/task1.py）
 ├── slack_helpers/      各章で共通して使うヘルパー（スレッド返信など）
 ├── docs/               教材

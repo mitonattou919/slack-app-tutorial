@@ -86,6 +86,7 @@ manifest の差分は `diff <前の章>/manifest.yaml <章>/manifest.yaml` で�
 | 5 `05_modals` | `/practice-feedback` | 不要（コマンド追加のみ。保存はする） | `trigger_id` の失効（`ack()` や重い処理の後に開こうとする） | フォームが開く。短すぎる入力でエラー表示。送信後に DM でお礼 | `/practice-feedback from U…` → `feedback from U…: …` または `… rejected: too short` |
 | 6 `06_app_home` | `home_tab_enabled`、`app_home_opened` | 不要 | イベント購読を入れ忘れるとホームが空のまま | ホームタブに案内。課題 3 は再起動でカウントが 0 に戻る | `app_home_opened by U… (tab=home)` |
 | 7 `07_streaming` | なし | 不要 | 3 秒ルールとの関係（返事が出るまでの待ち） | 「stream」で文字が少しずつ表示される | `stream request from U… in C…` |
+| 8 `08_agents`（応用編） | **別 App を新規作成**（`agent_view`、`assistant:write` `im:history`、`message.im` `agent_session_stopped` など）。トークンは `.env.agent` | 新規 App なので初回インストール | 停止ボタンの押し遅れ（処理が終わった直後に押しても `(stopped)` が付く）。`interactivity` を入れ忘れると 👍👎 が無反応 | メッセージタブで候補が出る。`調査 ○○` で 5 段階の進捗（`timeline` を含めるとカード表示）。停止ボタンと 👍👎 | `message from U… in D…` → `agent_session_stopped: {…}` / `feedback good-feedback by U…`。起動は `uv run --env-file .env.agent 08_agents/main.py`（Claude 連携は `AGENT_LLM=claude`） |
 
 スコープが増えた章（2・3）は、貼り替えたあと**必ず再インストール**してから起動する。再インストール前にトークンを取り直す必要はない（Bot Token は同じ）。
 

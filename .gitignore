@@ -1,5 +1,6 @@
 # トークン
 .env
+.env.agent
 
 # Python
 __pycache__/

@@ -1,0 +1,33 @@
+display_information:
+  name: Practice Agent
+features:
+  app_home:
+    home_tab_enabled: false
+    messages_tab_enabled: true
+    messages_tab_read_only_enabled: false
+  bot_user:
+    display_name: practice-agent
+    always_online: true
+  agent_view:
+    agent_description: ハンズオン用の練習エージェントです。話しかけると少しずつ返事をします。
+    suggested_prompts:
+      - title: 自己紹介して
+        message: 自己紹介してください
+      - title: ストリーミングを見せて
+        message: 少しずつ返事してください
+oauth_config:
+  scopes:
+    bot:
+      - assistant:write
+      - chat:write
+      - im:history
+settings:
+  event_subscriptions:
+    bot_events:
+      - app_context_changed
+      - agent_session_stopped
+      - app_home_opened
+      - message.im
+  interactivity:
+    is_enabled: true
+  socket_mode_enabled: true

@@ -35,7 +35,7 @@ answers/
 │   ├── task1.py
 │   ├── task2.py
 │   └── task3.py
-└── …（07_streaming まで同じ構成）
+└── …（08_agents まで同じ構成）
 ```
 
 リポジトリのルートで、章のファイルと同じように起動できます。
@@ -776,5 +776,105 @@ def handle_mention(event, say_stream):
 **LLM を使う場合**: 多くの LLM の API は、応答を少しずつ受け取る「ストリーミング」の機能を持っています。上の `for` の代わりに、LLM から断片が届くたびに `stream.append(markdown_text=断片)` を呼べば、生成 AI のボットになります。このとき `time.sleep` は不要で、`buffer_size` は既定のまま（ある程度まとめて送る）にすると、Slack の API の呼び出し回数を抑えられます。
 
 **つまずきやすい点**: `stream.stop()` を呼び忘れると、ストリームが終わらないままになります。途中で例外が起きても止められるよう、本番では `try` / `finally` で囲みます。
+
+</details>
+
+---
+
+## Chapter 8: エージェント画面（応用編）
+
+> 起動は `.env` ではなく `.env.agent` を使います（例: `uv run --env-file .env.agent answers/08_agents/task1.py`）。
+
+### 課題 1（基本）: 所要秒数を変えて、`plan` と `timeline` の見え方を比べる
+
+<details>
+<summary>ヒント</summary>
+
+`RESEARCH_STAGES` の各行の 4 つ目の値が、その段階の所要秒数です。長くすると、実行中の表示（`in_progress`）をゆっくり観察できます。`調査 ○○` と `調査 ○○ timeline` を同じテーマで送って、並べて比べます。
+
+</details>
+
+<details>
+<summary>解答例（<code>answers/08_agents/task1.py</code>）</summary>
+
+```python
+    (
+        "research", "調査", "公開情報を検索しています", 5.0,
+        ...
+    ),
+    (
+        "factcheck", "ファクトチェック", "主張を情報源と照合しています", 5.0,
+        ...
+    ),
+    (
+        "summarize", "要約", "要点をまとめています", 3.0,
+        ...
+    ),
+```
+
+**確かめ方**: `調査 テスト` と `調査 テスト timeline` を送ります。`plan` は 5 段階が 1 つのまとまりとして、`timeline` は進んだ段階がカードとして積み上がる形で表示されます。
+
+**ポイント**: `timeline` では `pending`（まだ始まっていない段階）が表示されません。`plan` では一覧に出ます。
+
+</details>
+
+### 課題 2（応用）: 「翻訳」の段階を足して、停止ボタンで止める
+
+<details>
+<summary>ヒント</summary>
+
+`RESEARCH_STAGES` に 1 行足すだけです。`run_research` は、リストの順に段階を処理します。足した段階も `work(stop_flag, seconds)` の中で停止を確認するので、追加のコードは要りません。「ベリファイ」と「完成」の間に足します。
+
+</details>
+
+<details>
+<summary>解答例（<code>answers/08_agents/task2.py</code>）</summary>
+
+```python
+    ("translate", "翻訳", "英語に訳しています", 2.0, "英語版の要点ができました", []),
+    ("done", "完成", "レポートに仕上げています", 1.5, "レポートができました", []),
+```
+
+**確かめ方**: `調査 テスト` を送ると、6 段階になります。「翻訳」が動いている間に停止ボタンを押すと、その段階が「ユーザーが停止しました」（エラー表示）になり、👍👎 は付きません。
+
+**つまずきやすい点**: 各行は 6 つの値（`id`、タイトル、説明、秒数、結果、出典）が必要です。1 つでも足りないと、起動はしても調査のときに `ValueError` になります。`id` は他の段階と重ならない名前にします（同じ `id` は同じカードとして上書きされます）。
+
+**`AGENT_LLM=claude` のとき**: 足した段階には Claude への指示（`RESEARCH_PROMPTS`）を書いていないので、Claude を呼ばずに「レポートができました」と出ます。本物にするには、`RESEARCH_PROMPTS` にも同じ `id` の指示を足します。
+
+</details>
+
+### 課題 3（複合）: 👍👎 の件数を数えて、返事に合計を出す
+
+<details>
+<summary>ヒント</summary>
+
+Chapter 6 の課題 3 と同じ考え方です。件数を入れる変数を関数の外に作り、`handle_feedback` で増やします。今回は辞書にして、キーに `value`（`good-feedback` / `bad-feedback`）を使うと、`if` を書かずに済みます。辞書の中身を書き換えるだけなら、`global` 宣言は要りません。
+
+</details>
+
+<details>
+<summary>解答例（<code>answers/08_agents/task3.py</code>）</summary>
+
+```python
+# 👍👎 の件数（プログラムを再起動すると 0 に戻る）。辞書の中身を書き換えるだけなので、global 宣言は要らない
+feedback_counts = {"good-feedback": 0, "bad-feedback": 0}
+
+
+@app.action("feedback")
+def handle_feedback(ack, body, respond):
+    ack()
+    value = body["actions"][0]["value"]
+    feedback_counts[value] += 1
+    logger.info("feedback %s by %s (%s)", value, body["user"]["id"], feedback_counts)
+    respond(
+        text=f"フィードバックありがとうございます！（これまでの合計: 👍 {feedback_counts['good-feedback']} 件 / 👎 {feedback_counts['bad-feedback']} 件）",
+        response_type="ephemeral",
+        replace_original=False,
+    )
+```
+
+**確かめ方**: `調査 テスト` の完了後、👍 を 2 回、👎 を 1 回押すと、返事の合計が増えていきます。プログラムを再起動すると 0 に戻ります。
+
+**つまずきやすい点**: 同じ返事に何度でも押せるので、1 人が複数回押せば、その分だけ増えます。誰が押したかで重複を除くには、`body["user"]["id"]` を集合に入れる、などの工夫が要ります。複数のリスナーが同時に動くこともあるため、本格的に数えるなら、変数ではなくデータベースに保存します。
 
 </details>
