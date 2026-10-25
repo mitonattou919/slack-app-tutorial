@@ -6,7 +6,7 @@ tags:
   - learning-material
 type: tutorial
 created: 2026-10-15
-description: "uv と Bolt for Python で、メンション・コマンド・ボタン・モーダル・App Home・ストリーミングに対応した練習用 Slack ボットを手元で動かすハンズオン教材"
+description: "uv と Bolt for Python で、メンション・コマンド・ボタン・モーダル・App Home・ストリーミングに対応した練習用 Slack ボットを手元で動かし、応用編でエージェント画面（進捗表示・停止ボタン）まで試すハンズオン教材"
 related:
   - "[[Slack]]"
   - "[[Python]]"
@@ -41,8 +41,9 @@ related:
 | 5 | `/practice-feedback` で入力フォームを開く | モーダル | `05_modals/` |
 | 6 | アプリのホームタブに案内を表示する | App Home | `06_app_home/` |
 | 7 | AI のように文字を少しずつ表示する | ストリーミング | `07_streaming/` |
+| 8（応用編） | 調査の進捗を段階的に見せ、停止ボタンと 👍👎 に対応する | エージェント画面（`agent_view`） | `08_agents/` |
 
-各ディレクトリには、その章を終えた時点の `main.py` と `manifest.yaml` が入っています。中身は**それまでの章を全部含んだ状態**なので、途中の章から始めることもできます。
+各ディレクトリには、その章を終えた時点の `main.py` と `manifest.yaml` が入っています。Chapter 1〜7 の中身は**それまでの章を全部含んだ状態**なので、途中の章から始めることもできます。応用編の Chapter 8 だけは、**専用の別 App** で動かす単独のプログラムです（理由は Chapter 8 で説明します）。
 
 ### 2. 手元の PC で動かす理由：Socket Mode
 
@@ -110,7 +111,8 @@ slack-app-tutorial/
 ├── 04_block_kit/
 ├── 05_modals/
 ├── 06_app_home/
-├── 07_streaming/          ← 全章の完成形
+├── 07_streaming/          ← Chapter 1〜7 の完成形
+├── 08_agents/             ← 応用編 Chapter 8（別 App 用。単独で動く）
 ├── answers/               ← 練習課題の解答例（章ごと）
 ├── slack_helpers/         ← 各章で共通して使うヘルパー（Chapter 2 で扱う）
 ├── docs/                  ← この教材
@@ -767,7 +769,7 @@ Chapter 6 のもので起動し直し（`uv run --env-file .env 06_app_home/main
 
 生成 AI のボットは、回答を一度に出すのではなく、文字が少しずつ流れるように表示されます。Slack はこのための **ストリーミング API** を用意しており、Bolt for Python では `say_stream` で簡単に使えます。この章では LLM の代わりに、決まった文章を少しずつ送ります。
 
-> ⚠ ストリーミングは AI アプリ向けの新しい機能です。無料プランのワークスペースで利用できるかは、公式ドキュメントで確認できませんでした（2026-10-15 時点）。Developer Program の基本サンドボックスでは、`say_stream` によるストリーミングが動作することを確認しています（2026-10 時点）。動かない場合は Developer Program のサンドボックスで試すか、この章を飛ばして Chapter 8 へ進んでください。
+> ⚠ ストリーミングは AI アプリ向けの新しい機能です。無料プランのワークスペースで利用できるかは、公式ドキュメントで確認できませんでした（2026-10-15 時点）。Developer Program の基本サンドボックスでは、`say_stream` によるストリーミングが動作することを確認しています（2026-10 時点）。動かない場合は Developer Program のサンドボックスで試すか、この章を飛ばして Chapter 9 へ進んでください（応用編の Chapter 8 も、ストリーミングが動くことが前提です）。
 
 マニフェストの変更は不要です（必要なスコープ `chat:write` は Chapter 1 から付いています。`07_streaming/manifest.yaml` は Chapter 6 と同じ内容です）。
 
@@ -818,16 +820,244 @@ Chapter 3〜5 では「3 秒以内に `ack()`」が必須でした。イベン�
 
 ---
 
-## Chapter 8: 後片付けと次の一歩
+## Chapter 8: エージェント画面（応用編）
+
+### 1. エージェント画面とは
+
+Slack には、AI エージェント向けの専用画面があります。アプリのメッセージタブを開くと DM のように話しかけられ、返事の途中経過（「考え中」の表示、作業の進み具合、停止ボタン）を Slack が標準の部品で見せてくれます。この章では、**調査を頼むと、調査 → ファクトチェック → 要約 → ベリファイ → 完成の 5 段階が順に表示されるエージェント**を作ります。
+
+| 見える部分 | 正体 |
+|---|---|
+| 「<アプリ名> is working」と回るマーク | `agents.sessions.setStatus`（`processing` → `active`） |
+| 5 段階の一覧・カード | ストリーミングの `task_update` チャンク |
+| 全体タイトルの更新 | `plan_update` チャンク |
+| 出典リンク | `task_update` の `sources` |
+| 停止ボタン | `agent_session_stopped` を購読すると Slack が出す |
+| 返事の下の 👍👎 | Block Kit の `feedback_buttons` |
+| 話しかける候補 | マニフェストの `agent_view.suggested_prompts` |
+
+自分で書くのは「どのタイミングで、どのチャンクを送るか」と、停止されたときに処理を抜ける部分だけです。画面そのものは作りません。
+
+> ⚠ **応用編の注意**
+> - `agent_view` は AI アプリ向けの新しい機能で、細かい仕様は変わる可能性があります。Developer Program のサンドボックスで動作を確認しています（2026-10 時点）。無料プランのワークスペースで使えるかは確認できていません。動かない場合は、この章を飛ばして Chapter 9 へ進んでください
+> - **`agent_view` への切り替えは元に戻せません。** Chapter 1〜7 の Practice Bot では試さず、この章では**専用の新しい App** を作ります（そのため、`08_agents/` は Chapter 7 までのリスナーを含まない、単独のプログラムです）
+> - LLM（Claude）とつなぐ部分は**任意**です。API キーがなくても、最後まで動かせます
+
+### 2. 新しい App を作る
+
+`08_agents/manifest.yaml` から、Chapter 1 の「3. マニフェストからアプリを作る」「4. 2 種類のトークンを取得する」と同じ手順で、新しい App（名前は `Practice Agent`）を作り、インストールします。トークンは Chapter 1〜7 の `.env` とは別に、`.env.agent` に書きます。
+
+```bash
+cp .env.example .env.agent
+```
+
+`.env.agent` の `SLACK_BOT_TOKEN` と `SLACK_APP_TOKEN` を、新しい App の値に置き換えます（`.env.agent` も `.gitignore` で除外済みです）。
+
+マニフェストの追加項目は、次のとおりです。
+
+| 部分 | 意味 |
+|---|---|
+| `features.agent_view` | エージェント画面を有効にする。`agent_description`（説明）と、`suggested_prompts`（話しかける候補）を書く |
+| `features.app_home.messages_tab_enabled` | メッセージタブを出す。エージェント画面はここで動く |
+| スコープ `assistant:write` | 「考え中」の表示などエージェント向けの API を使う |
+| スコープ `im:history` | メッセージタブに届いた発言を読む |
+| イベント `message.im` | メッセージタブへの発言を受け取る |
+| イベント `agent_session_stopped` | **停止ボタンが押された**ことを受け取る。これを購読すると、実行中に停止ボタンが出る |
+| イベント `app_home_opened` / `app_context_changed` | 画面を開いた・開いている場所が変わった通知。この章ではログに出すだけ |
+| `settings.interactivity.is_enabled` | 👍👎 のボタン操作を受け取る |
+
+> 候補のプロンプトは、マニフェストに書いたものが固定で表示されます。マニフェストに候補があると、`assistant.threads.setSuggestedPrompts` で動的に変える API は `static_prompts_configured` で拒否されます。
+
+### 3. 最初の返事：考え中の表示とストリーミング
+
+起動します。
+
+```bash
+uv run --env-file .env.agent 08_agents/main.py
+```
+
+Slack で `practice-agent` のメッセージタブを開くと、候補が 2 つ表示されます。「自己紹介して」を押すか、何か話しかけてください。固定の文章が少しずつ返ってきます。
+
+```python
+# Chapter 8: DM に届いたメッセージを受けて、応答をストリーミングで返す
+@app.event("message")
+def handle_message(client, event, say_stream):
+    # 編集や削除、ボット自身の発言は無視する
+    if event.get("subtype") or event.get("bot_id"):
+        return
+    channel_id = event["channel"]
+    thread_ts = event.get("thread_ts") or event["ts"]
+    client.agents_sessions_setStatus(channel_id=channel_id, thread_ts=thread_ts, status="processing")
+    stream = say_stream(buffer_size=20)
+    try:
+        for chunk in stream_dummy(event["text"]):
+            stream.append(markdown_text=chunk)
+    finally:
+        stream.stop()
+        client.agents_sessions_setStatus(channel_id=channel_id, thread_ts=thread_ts, status="active")
+```
+
+> 実際の `08_agents/main.py` は、この骨組みに、次の節からの機能（調査・停止・👍👎・エラー処理）を足したものです。
+
+| 部分 | 意味 |
+|---|---|
+| `event["thread_ts"] or event["ts"]` | 返事を付けるスレッドの目印。エージェント画面の会話は、スレッドごとに独立している |
+| `agents_sessions_setStatus(... "processing")` | 「practice-agent is working」と回るマークを出す。返事の処理に入る合図 |
+| `"active"` | 処理が終わったので、表示を消す。`finally` に置くと、失敗しても必ず消える |
+| `say_stream(buffer_size=20)` | Chapter 7 と同じ。`stream.append` で追記、`stream.stop()` で終了 |
+
+Chapter 7 との違いは、`@app.message("stream")` ではなく `@app.event("message")` で受けている点と、`setStatus` で処理中を知らせる点です。
+
+### 4. 進捗をタスクで見せる
+
+`調査 ○○` と送ると、5 段階の進捗が表示されます（例: `調査 Slack の chat.startStream`）。中身はダミーの待ち時間で、各段階が終わるたびに結果と出典リンクが付きます。
+
+```python
+# 最初に、全タスクを pending で並べる
+stream.append(
+    chunks=[{"type": "plan_update", "title": "「…」のリサーチ（準備中）"}]
+    + [{"type": "task_update", "id": sid, "title": name, "status": "pending"} for sid, name, *_ in RESEARCH_STAGES]
+)
+for sid, name, doing, seconds, output, sources in RESEARCH_STAGES:
+    # 実行中にする
+    stream.append(chunks=[{"type": "task_update", "id": sid, "title": name, "status": "in_progress", "details": doing}])
+    work(stop_flag, seconds)  # 処理に時間がかかるふり
+    # 完了にして、結果と出典を付ける
+    stream.append(chunks=[{"type": "task_update", "id": sid, "title": name, "status": "complete", "output": output, "sources": sources}])
+```
+
+| 部分 | 意味 |
+|---|---|
+| `chunks=[...]` | `markdown_text` の代わりに、構造のあるデータを送る。**同じストリームで `markdown_text` と混ぜられない**（`streaming_mode_mismatch`）ので、文章も `{"type": "markdown_text", "text": ...}` のチャンクで送る |
+| `task_update` | 1 つの作業の状態。`id` が同じなら、同じカードが更新される。`status` は `pending` / `in_progress` / `complete` / `error` |
+| `plan_update` | 全体のタイトルを更新する |
+| `sources` | 出典リンク（`type: url`、`text`、`url`） |
+| `buffer_size=1` | `chunks` は即座に送られる。進捗表示では `say_stream(buffer_size=1)` にしておく |
+
+**表示モード**: `say_stream(task_display_mode=...)` で、見え方が変わります。
+
+| `task_display_mode` | 見え方 |
+|---|---|
+| `plan`（既定） | 5 段階が 1 つのまとまり（プラン）として表示される。`pending` も一覧に出る |
+| `timeline` | 進んだ段階が、それぞれカードとして順に積み上がる。`pending` は出ない |
+
+`調査 Slack の chat.startStream timeline` のように `timeline` を含めると、`timeline` 表示になります。2 つを見比べてください。
+
+### 5. 停止ボタンと 👍👎
+
+**停止ボタン**: 処理中（`processing`）の間、「is working」の表示のところに停止ボタンが出ます。押されると `agent_session_stopped` イベントが届くので、処理を途中で抜けます。
+
+```python
+# 停止ボタンが押されたスレッドの目印（thread_ts ごと）。リスナーは別スレッドで動くので Event を使う
+stop_flags = {}
+
+@app.event("agent_session_stopped")
+def handle_session_stopped(event):
+    flag = stop_flags.get(event["thread_ts"])
+    if flag is not None:
+        flag.set()  # 処理の側が、このフラグを見て抜ける
+```
+
+| 部分 | 意味 |
+|---|---|
+| `threading.Event` | 停止の合図を、別のスレッド（処理中のリスナー）へ伝える。`work()` が 0.5 秒ごとに `is_set()` を見る |
+| 毎回 `Event()` を作り直す | 前の処理が終わったあとに届いた停止イベントが、次の処理を止めないようにする |
+| 止められたタスク | `status: "error"` と「ユーザーが停止しました」にして、`return False` で抜ける |
+
+停止すると、返事に **`(stopped)`** が付くことがあります。これは「停止ボタンが押された時点で、ストリームがまだ開いていた」という Slack 側の記録です。返事が途中で切れたことを表すわけではありません（処理が終わる直前に押すと、最後まで出ていても付きます）。
+
+**👍👎**: 最後まで終わったときだけ、`stream.stop(blocks=...)` で付けます。
+
+```python
+FEEDBACK_BLOCKS = [
+    {
+        "type": "context_actions",
+        "elements": [
+            {
+                "type": "feedback_buttons",
+                "action_id": "feedback",
+                "positive_button": {"text": {"type": "plain_text", "text": "👍"}, "value": "good-feedback", "accessibility_label": "この回答は役に立った"},
+                "negative_button": {"text": {"type": "plain_text", "text": "👎"}, "value": "bad-feedback", "accessibility_label": "この回答は役に立たなかった"},
+            }
+        ],
+    }
+]
+
+@app.action("feedback")
+def handle_feedback(ack, body, respond):
+    ack()
+    value = body["actions"][0]["value"]  # good-feedback か bad-feedback
+    logger.info("feedback %s by %s", value, body["user"]["id"])
+    respond(text="フィードバックありがとうございます！", response_type="ephemeral", replace_original=False)
+```
+
+Chapter 4 のボタンと同じく、`action_id` で受けて `ack()` を呼びます。マニフェストの `interactivity` が有効でないと、押しても届きません。
+
+起動し直して（`Ctrl+C` → もう一度 `uv run ...`）、次を試してください。
+
+| 操作 | 期待する結果 |
+|---|---|
+| `調査 Slack の chat.startStream` | 5 段階が 1 つのプランとして進み、出典リンクが付く。最後にレポートと 👍👎 が出る |
+| `調査 Slack の chat.startStream timeline` | 5 段階が、カードとして順に積み上がる |
+| 調査の途中で停止ボタンを押す | 実行中の段階が「ユーザーが停止しました」（エラー表示）になり、👍👎 は付かない |
+| 👍 か 👎 を押す | 自分にだけ「フィードバックありがとうございます！」が出る。ターミナルに `feedback good-feedback by U…` |
+
+> **うまくいかない時**:
+> - 候補が出ない、メッセージタブが見つからない → マニフェストの `agent_view` と `messages_tab_enabled` を確認し、貼り替えたあとに再インストールします
+> - 停止ボタンが出ない → `agent_session_stopped` を購読しているか、`setStatus` で `processing` にしているかを確認します
+> - 👍👎 を押しても何も起きない → マニフェストの `interactivity.is_enabled: true` を確認します
+> - `streaming_mode_mismatch` が出る → 同じストリームに `markdown_text=` と `chunks=` を混ぜていないか確認します
+> - `static_prompts_configured` が出る → マニフェストに候補があるので、`setSuggestedPrompts` は呼ばないでください
+
+### 6. （任意）Claude とつなぐ
+
+ここまでの応答は、すべて固定の文章でした。Anthropic の API キーを持っている人は、**`AGENT_LLM=claude`** を付けて起動すると、次の 2 か所が本物になります。
+
+| 場所 | 本物になること |
+|---|---|
+| 普通の発言 | `stream_llm()` が Claude の応答を少しずつ流す |
+| `調査 ○○` | 5 段階それぞれで `ask()` が Claude を呼ぶ。調査とファクトチェックは **Web 検索つき**で、検索した語は `details` に、見つかった URL は `sources` に入る |
+
+```bash
+# .env.agent に ANTHROPIC_API_KEY=sk-ant-… を足してから
+AGENT_LLM=claude uv run --env-file .env.agent 08_agents/main.py
+```
+
+ダミーの `work()` を `ask()`（Claude を呼ぶ関数）に差し替えただけで、タスクを出すコードは同じです。LLM を使わない人にも、**画面の仕組みを理解するにはダミーで十分**です。
+
+| 注意 | 内容 |
+|---|---|
+| キーの扱い | `.env.agent` に書く。コードに直接書かない。チャットや画面に載せない |
+| 料金 | 調査 1 回で Claude を 4 回呼び、Web 検索は最大 5 回です。目安は 1 回あたり 10 円前後（2026-10 時点。最新の料金は Anthropic の料金表で確認する）。長く試すときは、使用量の上限を設定しておく |
+| モデル | 既定は `claude-haiku-4-5-20251001`。`AGENT_MODEL=…` で変えられる。モデルによっては、組織の設定で `429`（`rate_limit_error`）になることがある。その時は別のモデルを試す |
+| ファイアウォール | サンドボックスで動かす場合、`api.anthropic.com` の許可が要る（Web 検索は Anthropic 側で実行されるので、検索先のサイトの許可は不要） |
+| 停止ボタン | Claude を呼んでいる最中は止められない。呼び出しが終わった段階で止まる |
+| エラー | API のエラーは、調査ではタスクの表示（「Claude API でエラーが出ました」）、普通の発言では返事の文章で伝える。詳しい原因は、ターミナルのログの `request_id` で追える |
+
+別の LLM（Gemini など）を使う場合は、`stream_llm()` と `ask()` の中身を差し替えます。Slack に流す部分（`stream.append(...)`）は変わりません。
+
+### 練習課題
+
+> ヒントと解答例: `slack-app-tutorial-answers.md` の Chapter 8（動くコードは `answers/08_agents/`）
+
+1. **基本**: `RESEARCH_STAGES` の所要秒数を変えて、`調査 ○○` と `調査 ○○ timeline` の見え方の違いを比べる
+2. **応用**: 「ベリファイ」と「完成」の間に、「翻訳」の段階を足す。実行中に停止ボタンを押して、止まることを確かめる
+3. **複合**: 👍👎 の件数を数え、押したときの返事に「これまでの合計: 👍 N 件 / 👎 M 件」を出す（プログラムを再起動すると 0 に戻ることも確認する）
+
+---
+
+## Chapter 9: 後片付けと次の一歩
 
 ### 1. ここまでの完成形
 
-全章を終えた完成形は `07_streaming/` にあります（練習課題の内容は含みません）。
+Chapter 1〜7 を終えた完成形は `07_streaming/` にあります（練習課題の内容は含みません）。応用編の Chapter 8 は別 App なので、`08_agents/` に単独で入っています。
 
 | ファイル | 中身 |
 |---|---|
 | `07_streaming/main.py` | Chapter 1〜7 のすべてのリスナー |
 | `07_streaming/manifest.yaml` | Chapter 6 と同じ、全機能を有効にしたマニフェスト |
+| `08_agents/main.py` | Chapter 8 のエージェント（別 App 用。Chapter 1〜7 のリスナーは含まない） |
+| `08_agents/manifest.yaml` | Chapter 8 のマニフェスト（`agent_view`） |
 | `slack_helpers/threads.py` | スレッド返信の共通ヘルパー `reply_in_thread` |
 
 章ごとの差分は、`diff` で確かめられます。
@@ -843,15 +1073,15 @@ diff 03_slash_commands/main.py 04_block_kit/main.py
 | 対象 | 片付け方 |
 |---|---|
 | 動いているプログラム | ターミナルで `Ctrl+C` |
-| Slack App | App 設定画面の **Basic Information** の最下部にある **Delete App** でアプリを削除する |
-| トークン | リポジトリのルートの `.env` を削除する（下記）。アプリを残す場合は、App-Level Token を設定画面から無効化（Revoke）しておくと安心 |
+| Slack App | App 設定画面の **Basic Information** の最下部にある **Delete App** でアプリを削除する（Chapter 8 で作った `Practice Agent` も忘れずに） |
+| トークン | リポジトリのルートの `.env` と `.env.agent` を削除する（下記）。アプリを残す場合は、App-Level Token を設定画面から無効化（Revoke）しておくと安心 |
 | 練習用チャンネル | 不要ならアーカイブする |
 | サンドボックス | 期限が来ると自動でアーカイブされる（基本サンドボックスは 1 か月） |
-| 取得したリポジトリ | 下記のコマンドで削除（`.env` にトークンが残っているため） |
+| 取得したリポジトリ | 下記のコマンドで削除（`.env` や `.env.agent` にトークンが残っているため） |
 
 ```bash
 cd ..
-rm -rf slack-app-tutorial   # リポジトリごと削除する。残したい場合は .env だけ削除する
+rm -rf slack-app-tutorial   # リポジトリごと削除する。残したい場合は .env と .env.agent だけ削除する
 ```
 
 ⚠ 続けて best-practices に進む場合は、アプリとリポジトリを残しておいても構いません。ただし `.env` を Git に入れたり、誰かに送ったりしないでください（`.gitignore` で除外済みですが、`git add -f` などで無理に追加しないこと）。
@@ -867,6 +1097,7 @@ rm -rf slack-app-tutorial   # リポジトリごと削除する。残したい�
 | 5 | `trigger_id` を使ったモーダルと入力値の受け取り |
 | 6 | ユーザーごとのホーム画面 |
 | 7 | ストリーミング返信と、イベントの自動受領 |
+| 8 | エージェント画面：タスクによる進捗表示、停止ボタン、👍👎 |
 
 ### 4. 次の一歩
 

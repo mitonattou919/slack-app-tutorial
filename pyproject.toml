@@ -5,6 +5,7 @@ description = "Slack App ハンズオン用の Practice Bot（章ごとのコー
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "anthropic>=2.3.0",
     "slack-bolt>=1.30.0",
 ]
 
